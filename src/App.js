@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import QRCode from 'react-qr-code';
 import './App.css';
+import ArduinoBridge from './arduinoBridge';
 
 function App() {
   // State variables
@@ -9,6 +11,28 @@ function App() {
   const [animation, setAnimation] = useState(false);
   const [progress, setProgress] = useState(0);
   const [language, setLanguage] = useState('nl'); // Default to Dutch
+  const [showQR, setShowQR] = useState(false); // State to show/hide QR code
+  const [backgroundColor, setBackgroundColor] = useState(null); // For background color
+  const [arduinoConnected, setArduinoConnected] = useState(false);
+  
+  // State variables for background animation
+  const [backgroundActive, setBackgroundActive] = useState(false);
+  const [animatingBackground, setAnimatingBackground] = useState(false);
+  
+  // Arduino bridge reference
+  const arduinoBridgeRef = useRef(null);
+  
+  // Initialize Arduino bridge
+  useEffect(() => {
+    arduinoBridgeRef.current = new ArduinoBridge();
+    
+    // Clean up on unmount
+    return () => {
+      if (arduinoBridgeRef.current && arduinoConnected) {
+        arduinoBridgeRef.current.disconnect();
+      }
+    };
+  }, [arduinoConnected]);
   
   // Content for the app
   const content = {
@@ -17,6 +41,7 @@ function App() {
       subtitle: 'Ontdek je morele kompas',
       startButton: 'Begin de Ervaring',
       nextButton: 'Volgende',
+      backButton: 'Ga Terug',
       resultButton: 'Ontdek Je Morele Kompas',
       restartButton: 'Opnieuw Beginnen',
       introText: 'Welkom bij Electio, een interactieve installatie die je helpt je morele kompas te ontdekken. Je krijgt 12 dilemma\'s voorgeschoteld die studenten vaak tegenkomen. Jouw keuzes onthullen welk type beslisser je bent.',
@@ -24,12 +49,15 @@ function App() {
       languageButton: 'Switch to English',
       progressText: 'Dilemma',
       of: 'van',
+      closeQR: 'Sluiten',
+      qrTitle: 'Scan deze QR-code om je resultaat te delen',
     },
     en: {
       title: 'Electio',
       subtitle: 'Discover your moral compass',
       startButton: 'Start the Experience',
       nextButton: 'Next',
+      backButton: 'Go Back',
       resultButton: 'Discover Your Moral Compass',
       restartButton: 'Start Again',
       introText: 'Welcome to Electio, an interactive installation that helps you discover your moral compass. You will be presented with 12 dilemmas that students often face. Your choices will reveal what type of decision-maker you are.',
@@ -37,6 +65,8 @@ function App() {
       languageButton: 'Wissel naar Nederlands',
       progressText: 'Dilemma',
       of: 'of',
+      closeQR: 'Close',
+      qrTitle: 'Scan this QR code to share your result',
     }
   };
 
@@ -91,7 +121,7 @@ function App() {
       {
         question: 'Een vriend leent geld van je en betaalt het niet terug. Wat doe je?',
         options: [
-          'Je spreek  t hen erop aan en vraagt je geld terug.',
+          'Je spreekt hen erop aan en vraagt je geld terug.',
           'Je laat het gaan – het is maar geld, en je wil de vriendschap niet op het spel zetten.',
           'Je leent hen nooit meer iets, maar zegt er niets over.'
         ],
@@ -264,32 +294,32 @@ function App() {
     ]
   };
 
-  // Profiles based on answers
+  // Profiles with enhanced colors for more vibrancy
   const profiles = {
     nl: {
       idealist: {
         title: "De Idealist – Jij bent de morele kompasdrager",
         description: "Jouw keuzes tonen dat je altijd handelt vanuit principes. Je zet eerlijkheid en rechtvaardigheid op de eerste plaats, zelfs als dat betekent dat je moeilijke beslissingen moet nemen. Of het nu gaat om eerlijk studeren, mensen helpen of je idealen volgen, je kiest altijd voor het grotere goed. Maar pas op: soms kan je idealisme je in conflict brengen met de realiteit.",
         traits: "Eerlijk, rechtvaardig, betrokken, ambitieus",
-        color: "#4CAF50"
+        color: "#66BB6A" // Brighter green
       },
       loyalist: {
         title: "De Loyalist – Jij bent de beschermer van je groep",
         description: "Jij kiest altijd voor je vrienden en de mensen om je heen. Of het nu gaat om je kotgenoot, een vriend in nood of een moeilijke groepsopdracht – je prioriteit ligt bij loyaliteit en samenhorigheid. Je denkt na over wat het beste is voor de groep, zelfs als dat betekent dat je eigen belangen soms opzij worden geschoven.",
         traits: "Sociaal, zorgzaam, teamplayer, conflictvermijdend",
-        color: "#2196F3"
+        color: "#42A5F5" // Brighter blue
       },
       pragmatist: {
         title: "De Pragmaticus – Jij kiest wat werkt",
         description: "Voor jou draait alles om efficiëntie en slimme keuzes. Je denkt praktisch na en kiest altijd de optie die jou het meeste voordeel oplevert – of dat nu in je studie, sociale leven of carrière is. Dit maakt je doortastend en succesvol, maar soms kunnen anderen je keuzes als hard of berekend ervaren.",
         traits: "Doelgericht, realistisch, rationeel, strategisch",
-        color: "#FF9800"
+        color: "#FFA726" // Brighter orange
       },
       individualist: {
         title: "De Individualist – Jij volgt je eigen pad",
         description: "Jij laat je niet beïnvloeden door verwachtingen van anderen – je maakt keuzes op basis van wat jij het belangrijkst vindt. Je hebt een sterke persoonlijkheid en volgt je eigen visie, zelfs als dat betekent dat je soms tegen de stroom in gaat. Je bent onafhankelijk en authentiek, maar let op dat je geen belangrijke connecties verliest door altijd je eigen weg te kiezen.",
         traits: "Onafhankelijk, zelfverzekerd, ambitieus, rebels",
-        color: "#9C27B0"
+        color: "#AB47BC" // Brighter purple
       }
     }, 
     en: {
@@ -297,25 +327,25 @@ function App() {
         title: "The Idealist – You are the moral compass bearer",
         description: "Your choices show that you always act based on principles. You put honesty and justice first, even if that means making difficult decisions. Whether it's studying honestly, helping people, or following your ideals, you always choose the greater good. But be careful: sometimes your idealism can bring you into conflict with reality.",
         traits: "Honest, fair, engaged, ambitious",
-        color: "#4CAF50"
+        color: "#66BB6A" // Brighter green
       },
       loyalist: {
         title: "The Loyalist – You are the protector of your group",
         description: "You always choose your friends and the people around you. Whether it's your roommate, a friend in need, or a difficult group assignment - your priority lies with loyalty and togetherness. You think about what's best for the group, even if it means your own interests sometimes take a back seat.",
         traits: "Social, caring, team player, conflict-avoiding",
-        color: "#2196F3"
+        color: "#42A5F5" // Brighter blue
       },
       pragmatist: {
         title: "The Pragmatist – You choose what works",
         description: "For you, everything revolves around efficiency and smart choices. You think practically and always choose the option that brings you the most benefit - whether in your studies, social life, or career. This makes you decisive and successful, but sometimes others may perceive your choices as hard or calculated.",
         traits: "Goal-oriented, realistic, rational, strategic",
-        color: "#FF9800"
+        color: "#FFA726" // Brighter orange
       },
       individualist: {
         title: "The Individualist – You follow your own path",
         description: "You don't let yourself be influenced by others' expectations - you make choices based on what you find most important. You have a strong personality and follow your own vision, even if it means sometimes going against the flow. You're independent and authentic, but be careful not to lose important connections by always choosing your own way.",
         traits: "Independent, confident, ambitious, rebellious",
-        color: "#9C27B0"
+        color: "#AB47BC" // Brighter purple
       }
     }
   };
@@ -328,10 +358,14 @@ function App() {
     let individualistScore = 0;
 
     // Calculate scores based on answers
-    Object.values(answers).forEach(answer => {
-      if (answer === 0) {
+    Object.entries(answers).forEach(([questionIndex, answerIndex]) => {
+      // Get the actual category from the dilemma
+      const currentDilemma = dilemmas[language][parseInt(questionIndex)];
+      const category = currentDilemma.category;
+      
+      if (answerIndex === 0) {
         // Option A tendencies
-        switch (dilemmas[language][parseInt(Object.keys(answers).length) - 1].category) {
+        switch (category) {
           case 'studie':
           case 'study':
             loyalistScore++;
@@ -344,17 +378,20 @@ function App() {
           case 'career':
             pragmatistScore++;
             break;
-          case 'persoonlijk':
+          case 'sociaal':
           case 'social':
+            individualistScore++;
+            break;
+          case 'persoonlijk':
           case 'personal':
             individualistScore++;
             break;
           default:
             break;
         }
-      } else if (answer === 1) {
+      } else if (answerIndex === 1) {
         // Option B tendencies
-        switch (dilemmas[language][parseInt(Object.keys(answers).length) - 1].category) {
+        switch (category) {
           case 'studie':
           case 'study':
             idealistScore++;
@@ -367,17 +404,20 @@ function App() {
           case 'career':
             individualistScore++;
             break;
-          case 'persoonlijk':
+          case 'sociaal':
           case 'social':
+            loyalistScore++;
+            break;
+          case 'persoonlijk':
           case 'personal':
             loyalistScore++;
             break;
           default:
             break;
         }
-      } else if (answer === 2) {
+      } else if (answerIndex === 2) {
         // Option C tendencies
-        switch (dilemmas[language][parseInt(Object.keys(answers).length) - 1].category) {
+        switch (category) {
           case 'studie':
           case 'study':
             pragmatistScore++;
@@ -390,10 +430,13 @@ function App() {
           case 'career':
             idealistScore++;
             break;
-          case 'persoonlijk':
+          case 'sociaal':
           case 'social':
-          case 'personal':
             individualistScore++;
+            break;
+          case 'persoonlijk':
+          case 'personal':
+            pragmatistScore++;
             break;
           default:
             break;
@@ -427,7 +470,130 @@ function App() {
     };
   };
 
-  // Handle answer selection
+  // Function to determine the answer profile type
+  const getAnswerProfileType = (questionIndex, answerIndex) => {
+    const currentDilemma = dilemmas[language][questionIndex];
+    const category = currentDilemma.category;
+    
+    if (answerIndex === 0) {
+      // Option A tendencies
+      switch (category) {
+        case 'studie':
+        case 'study':
+          return 'loyalist';
+        case 'ethisch':
+        case 'ethical':
+          return 'idealist';
+        case 'carrière':
+        case 'career':
+          return 'pragmatist';
+        case 'sociaal':
+        case 'social':
+          return 'individualist';
+        case 'persoonlijk':
+        case 'personal':
+          return 'individualist';
+        default:
+          return null;
+      }
+    } else if (answerIndex === 1) {
+      // Option B tendencies
+      switch (category) {
+        case 'studie':
+        case 'study':
+          return 'idealist';
+        case 'ethisch':
+        case 'ethical':
+          return 'pragmatist';
+        case 'carrière':
+        case 'career':
+          return 'individualist';
+        case 'sociaal':
+        case 'social':
+          return 'loyalist';
+        case 'persoonlijk':
+        case 'personal':
+          return 'loyalist';
+        default:
+          return null;
+      }
+    } else if (answerIndex === 2) {
+      // Option C tendencies
+      switch (category) {
+        case 'studie':
+        case 'study':
+          return 'pragmatist';
+        case 'ethisch':
+        case 'ethical':
+          return 'loyalist';
+        case 'carrière':
+        case 'career':
+          return 'idealist';
+        case 'sociaal':
+        case 'social':
+          return 'individualist';
+        case 'persoonlijk':
+        case 'personal':
+          return 'pragmatist';
+        default:
+          return null;
+      }
+    }
+    
+    return null;
+  };
+  
+  // Function to send color value to Arduino
+  const sendColorToArduino = (color) => {
+    // Log the color for demonstration
+    console.log('Sending color to Arduino:', color);
+    
+    // If Arduino is connected, send the color
+    if (arduinoBridgeRef.current && arduinoConnected) {
+      arduinoBridgeRef.current.sendColor(color);
+    }
+  };
+  
+  // Function to connect to Arduino
+  const connectToArduino = async () => {
+    if (arduinoBridgeRef.current) {
+      if (arduinoBridgeRef.current.isSupported()) {
+        const connected = await arduinoBridgeRef.current.connect();
+        setArduinoConnected(connected);
+        
+        // If connected and we have a background color, send it
+        if (connected && backgroundColor) {
+          sendColorToArduino(backgroundColor);
+        }
+        
+        return connected;
+      } else {
+        console.log('Web Serial API not supported in this browser');
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const createShareableURL = () => {
+    if (!result) return '';
+    
+    // Add a URL scheme to force browser opening
+    const baseUrl = "https://192.168.203.170:3000"; // Consider using HTTPS if possible
+    
+    const params = new URLSearchParams({
+      profile: result.profile,
+      lang: language,
+      idealist: result.scores.idealist,
+      loyalist: result.scores.loyalist,
+      pragmatist: result.scores.pragmatist,
+      individualist: result.scores.individualist
+    });
+    
+    return `${baseUrl}?${params.toString()}`;
+  };
+
+  // UPDATED: Handle answer selection with improved animation transitions
   const handleAnswer = (answerIndex) => {
     setAnimation(true);
     
@@ -436,7 +602,38 @@ function App() {
     const updatedAnswers = { ...answers, [currentDilemmaIndex]: answerIndex };
     setAnswers(updatedAnswers);
     
-    // After delay, move to next question or results
+    // Determine the profile type for this answer
+    const profileType = getAnswerProfileType(currentDilemmaIndex, answerIndex);
+    
+    // Set background color based on profile and activate animation
+    if (profileType) {
+      const profileColor = profiles[language][profileType].color;
+      setBackgroundColor(profileColor);
+      
+      // Clear any existing timeouts to prevent conflicts
+      if (window.fadeTimeout) clearTimeout(window.fadeTimeout);
+      if (window.fadeOutTimeout) clearTimeout(window.fadeOutTimeout);
+      
+      // Start fade-in immediately
+      setAnimatingBackground(true);
+      setBackgroundActive(true);
+      
+      // Send color to Arduino
+      sendColorToArduino(profileColor);
+      
+      // Schedule fade-out after 2 seconds of display time
+      window.fadeTimeout = setTimeout(() => {
+        // Start fade-out
+        setBackgroundActive(false);
+        
+        // Complete animation cycle after the fade-out finishes
+        window.fadeOutTimeout = setTimeout(() => {
+          setAnimatingBackground(false);
+        }, 1000); // Wait for the full fade-out transition (1s)
+      }, 2000); // Show for 2 seconds before starting fade-out
+    }
+    
+    // After delay for the full animation cycle, move to next question or results
     setTimeout(() => {
       setAnimation(false);
       
@@ -445,11 +642,69 @@ function App() {
         const profileResult = determineProfile();
         setResult(profileResult);
         setCurrentStep('result');
+        
+        // For the final result, keep the background color persistent
+        const finalProfileColor = profiles[language][profileResult.profile].color;
+        setBackgroundColor(finalProfileColor);
+        setBackgroundActive(true); // Keep the background active
+        setAnimatingBackground(false); // No more animation needed
+        sendColorToArduino(finalProfileColor);
       } else {
         // Update progress
         setProgress(currentDilemmaIndex + 1);
       }
-    }, 500);
+    }, 3000); // Wait for the full animation cycle
+  };
+
+  // UPDATED: Handle going back with improved animation
+  const handleGoBack = () => {
+    if (progress > 0) {
+      // Remove the last answer
+      const updatedAnswers = { ...answers };
+      delete updatedAnswers[progress - 1];
+      setAnswers(updatedAnswers);
+      
+      // Go back to previous question
+      setProgress(progress - 1);
+      
+      // Update background color based on the previous answer if any
+      if (Object.keys(updatedAnswers).length > 0) {
+        const lastQuestionIndex = Math.max(...Object.keys(updatedAnswers).map(Number));
+        const lastAnswer = updatedAnswers[lastQuestionIndex];
+        const profileType = getAnswerProfileType(lastQuestionIndex, lastAnswer);
+        
+        if (profileType) {
+          const profileColor = profiles[language][profileType].color;
+          setBackgroundColor(profileColor);
+          
+          // Clear any existing timeouts to prevent conflicts
+          if (window.fadeTimeout) clearTimeout(window.fadeTimeout);
+          if (window.fadeOutTimeout) clearTimeout(window.fadeOutTimeout);
+          
+          // Start fade-in immediately
+          setAnimatingBackground(true);
+          setBackgroundActive(true);
+          
+          sendColorToArduino(profileColor);
+          
+          // Schedule fade-out after 2 seconds of display time
+          window.fadeTimeout = setTimeout(() => {
+            // Start fade-out
+            setBackgroundActive(false);
+            
+            // Complete animation cycle after the fade-out finishes
+            window.fadeOutTimeout = setTimeout(() => {
+              setAnimatingBackground(false);
+            }, 1000); // Wait for the full fade-out transition (1s)
+          }, 2000); // Show for 2 seconds before starting fade-out
+        }
+      } else {
+        // Reset color if no answers
+        setBackgroundColor(null);
+        setBackgroundActive(false);
+        sendColorToArduino('#121212'); // Default dark background
+      }
+    }
   };
 
   // Handle restart
@@ -458,12 +713,43 @@ function App() {
     setResult(null);
     setCurrentStep('intro');
     setProgress(0);
+    setShowQR(false);
+    setBackgroundColor(null);
+    setBackgroundActive(false);
+    setAnimatingBackground(false);
+    sendColorToArduino('#121212'); // Reset to default color
   };
 
   // Handle language toggle
   const toggleLanguage = () => {
     setLanguage(language === 'nl' ? 'en' : 'nl');
   };
+
+  // Handle share button click
+  const handleShare = () => {
+    setShowQR(true);
+  };
+  
+  // UPDATED: useEffect for background transitions
+  useEffect(() => {
+    // Only manipulate background when there's an active animation or on the results page
+    if (animatingBackground || (result && currentStep === 'result')) {
+      // Always set the transition property
+      document.body.style.transition = 'background 1s ease-in-out';
+    }
+    
+    // Special case for results page - keep the background with more vibrant color
+    if (result && currentStep === 'result') {
+      document.body.style.transition = 'background 1s ease-in-out';
+      document.body.style.background = `radial-gradient(circle at top right, ${backgroundColor}66 0%, #0D0D0D 70%)`;
+    }
+    
+    // Cleanup function
+    return () => {
+      document.body.style.background = '';
+      document.body.style.transition = '';
+    };
+  }, [backgroundColor, backgroundActive, animatingBackground, result, currentStep]);
 
   // Effect to initialize progress when starting questions
   useEffect(() => {
@@ -472,14 +758,55 @@ function App() {
     }
   }, [currentStep, progress]);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (window.fadeTimeout) clearTimeout(window.fadeTimeout);
+      if (window.fadeOutTimeout) clearTimeout(window.fadeOutTimeout);
+    };
+  }, []);
+
+  // Determine profile class based on background color
+  const getProfileClass = () => {
+    if (!backgroundColor) return '';
+    
+    // Match the color to the profile
+    switch (backgroundColor) {
+      case '#66BB6A': return 'idealist-bg';
+      case '#42A5F5': return 'loyalist-bg';
+      case '#FFA726': return 'pragmatist-bg';
+      case '#AB47BC': return 'individualist-bg';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="app">
+    <div className={`app ${getProfileClass()} ${backgroundActive ? 'bg-active' : ''}`}>
+      {/* Add color overlay for background transitions */}
+      <div 
+        className={`color-overlay ${backgroundActive ? 'active' : ''}`}
+        style={{ 
+          background: backgroundColor ? 
+            `radial-gradient(circle at top right, ${backgroundColor}66 0%, rgba(13, 13, 13, 0) 70%)` : 
+            'transparent'
+        }}
+      ></div>
+      
       <header>
-        <h1>{content[language].title}</h1>
+        <h1><a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>{content[language].title}</a></h1>
         <h2>{content[language].subtitle}</h2>
         <button onClick={toggleLanguage} className="language-toggle">
           {content[language].languageButton}
         </button>
+        {!arduinoConnected && (
+          <button 
+            onClick={connectToArduino} 
+            className="secondary-button"
+            style={{ position: 'absolute', top: '1rem', left: '1rem' }}
+          >
+            Connect LED Panel
+          </button>
+        )}
       </header>
 
       <main className={`main ${animation ? 'animate' : ''}`}>
@@ -523,12 +850,22 @@ function App() {
                   </button>
                 ))}
               </div>
+              
+              {/* Back button - only show if not on first question */}
+              {progress > 0 && (
+                <button 
+                  onClick={handleGoBack} 
+                  className="secondary-button back-button"
+                >
+                  {content[language].backButton}
+                </button>
+              )}
             </div>
           </div>
         )}
 
         {currentStep === 'result' && result && (
-          <div className="result-screen">
+          <div className={`result-screen ${showQR ? 'qr-active' : ''}`}>
             <h2 style={{ color: profiles[language][result.profile].color }}>
               {profiles[language][result.profile].title}
             </h2>
@@ -542,16 +879,22 @@ function App() {
             <div className="score-chart">
               {Object.keys(result.scores).map((profile) => (
                 <div key={profile} className="score-bar-container">
-                  <div className="score-label">{profile}</div>
+                  <div className="score-label">
+                    <span>{profile}</span>
+                    <span>{result.scores[profile]}%</span>
+                  </div>
                   <div className="score-bar-wrapper">
                     <div 
-                      className="score-bar" 
+                      className={`score-bar ${profile}-bar`}
                       style={{ 
                         width: `${result.scores[profile]}%`,
                         backgroundColor: profiles[language][profile].color
                       }}
-                    ></div>
-                    <span className="score-value">{result.scores[profile]}%</span>
+                    >
+                      <span className={`score-value ${result.scores[profile] > 0 ? 'active' : ''}`}>
+                        {result.scores[profile]}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -561,8 +904,30 @@ function App() {
               <button onClick={handleRestart} className="secondary-button">
                 {content[language].restartButton}
               </button>
-              <button className="primary-button share-button">
+              <button onClick={handleShare} className="primary-button share-button">
                 {content[language].shareText}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* QR Code Modal */}
+        {showQR && (
+          <div className="qr-modal-overlay">
+            <div className="qr-modal">
+              <h3>{content[language].qrTitle}</h3>
+              <div className="qr-code-container">
+                <QRCode 
+                  value={createShareableURL()} 
+                  size={200}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  viewBox={`0 0 256 256`}
+                  bgColor="#FFFFFF"
+                  fgColor="#000000"
+                />
+              </div>
+              <button onClick={() => setShowQR(false)} className="secondary-button">
+                {content[language].closeQR}
               </button>
             </div>
           </div>
