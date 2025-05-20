@@ -1,5 +1,9 @@
+// Updated App.js with certificate modal that doesn't require scrolling
+// Complete file with all changes integrated
+
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'react-qr-code';
+import html2canvas from 'html2canvas'; // New import for downloading certificate
 import './App.css';
 import ArduinoBridge from './arduinoBridge';
 
@@ -12,6 +16,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [language, setLanguage] = useState('nl'); // Default to Dutch
   const [showQR, setShowQR] = useState(false); // State to show/hide QR code
+  const [showCertificate, setShowCertificate] = useState(false); // State to show/hide certificate
   const [backgroundColor, setBackgroundColor] = useState(null); // For background color
   const [arduinoConnected, setArduinoConnected] = useState(false);
   
@@ -24,6 +29,9 @@ function App() {
   
   // Initialize Arduino bridge
   useEffect(() => {
+    // Set page title when component mounts
+    document.title = "Electio | Moral Compass Quiz";
+    
     arduinoBridgeRef.current = new ArduinoBridge();
     
     // Clean up on unmount
@@ -51,6 +59,18 @@ function App() {
       of: 'van',
       closeQR: 'Sluiten',
       qrTitle: 'Scan deze QR-code om je resultaat te delen',
+      certificateButton: 'Certificaat',
+      certificateTitle: 'Electio Certificaat',
+      dateLabel: 'Datum:',
+      scoreLabel: 'Profiel Scores:',
+      idealistLabel: 'Idealist:',
+      loyalistLabel: 'Loyalist:',
+      pragmatistLabel: 'Pragmaticus:',
+      individualistLabel: 'Individualist:',
+      poweredBy: 'Aangedreven door Electio - Ontdek je morele kompas',
+      printButton: 'Print Certificaat',
+      downloadButton: 'Download Certificaat', // New text for download button
+      closeCertificate: 'Sluiten'
     },
     en: {
       title: 'Electio',
@@ -67,6 +87,18 @@ function App() {
       of: 'of',
       closeQR: 'Close',
       qrTitle: 'Scan this QR code to share your result',
+      certificateButton: 'Certificate',
+      certificateTitle: 'Electio Certificate',
+      dateLabel: 'Date:',
+      scoreLabel: 'Profile Scores:',
+      idealistLabel: 'Idealist:',
+      loyalistLabel: 'Loyalist:',
+      pragmatistLabel: 'Pragmatist:',
+      individualistLabel: 'Individualist:',
+      poweredBy: 'Powered by Electio - Discover your moral compass',
+      printButton: 'Print Certificate',
+      downloadButton: 'Download Certificate', // New text for download button
+      closeCertificate: 'Close'
     }
   };
 
@@ -470,6 +502,44 @@ function App() {
     };
   };
 
+  // Function to handle certificate button click
+  const handleCertificateClick = () => {
+    if (!result) return;
+    
+    // Toggle certificate view
+    setShowQR(false); // Close QR modal if open
+    setShowCertificate(true);
+  };
+
+  // Function to print certificate
+  const handlePrintCertificate = () => {
+    window.print();
+  };
+
+  // NEW FUNCTION: Handle download certificate
+  const handleDownloadCertificate = () => {
+    const certificateElement = document.getElementById('certificate-to-print');
+    
+    html2canvas(certificateElement, {
+      scale: 2, // Higher scale for better quality
+      backgroundColor: '#1E1E1E', // Match the dark background
+      logging: false,
+      useCORS: true
+    }).then(canvas => {
+      // Convert canvas to data URL
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      // Create a download link
+      const link = document.createElement('a');
+      const profileName = result.profile.charAt(0).toUpperCase() + result.profile.slice(1);
+      link.download = `Electio-${profileName}-Certificate.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  };
+
   // Function to determine the answer profile type
   const getAnswerProfileType = (questionIndex, answerIndex) => {
     const currentDilemma = dilemmas[language][questionIndex];
@@ -578,8 +648,8 @@ function App() {
   const createShareableURL = () => {
     if (!result) return '';
     
-    // Add a URL scheme to force browser opening
-    const baseUrl = "https://192.168.203.170:3000"; // Consider using HTTPS if possible
+    // Updated to use window.location.origin instead of hardcoded URL
+    const baseUrl = window.location.origin;
     
     const params = new URLSearchParams({
       profile: result.profile,
@@ -714,6 +784,7 @@ function App() {
     setCurrentStep('intro');
     setProgress(0);
     setShowQR(false);
+    setShowCertificate(false);
     setBackgroundColor(null);
     setBackgroundActive(false);
     setAnimatingBackground(false);
@@ -728,6 +799,7 @@ function App() {
   // Handle share button click
   const handleShare = () => {
     setShowQR(true);
+    setShowCertificate(false);
   };
   
   // UPDATED: useEffect for background transitions
@@ -929,6 +1001,80 @@ function App() {
               <button onClick={() => setShowQR(false)} className="secondary-button">
                 {content[language].closeQR}
               </button>
+              <button onClick={handleCertificateClick} className="primary-button" style={{ marginTop: '1rem' }}>
+                {content[language].certificateButton}
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Updated Certificate Modal - Modified to avoid scrolling */}
+        {showCertificate && result && (
+          <div className="certificate-overlay">
+            <div className="certificate-container">
+              <div 
+                className={`certificate ${result.profile}-certificate`} 
+                id="certificate-to-print"
+              >
+                <div className="certificate-header">
+                  <h1>{content[language].certificateTitle}</h1>
+                </div>
+                
+                <div className="certificate-content">
+                  <h2 className="profile-title" style={{ color: profiles[language][result.profile].color }}>
+                    {profiles[language][result.profile].title}
+                  </h2>
+                  
+                  <div className="certificate-description">
+                    <p>{profiles[language][result.profile].description}</p>
+                  </div>
+                  
+                  <div className="certificate-traits" style={{ backgroundColor: `${profiles[language][result.profile].color}22` }}>
+                    <p><strong>{profiles[language][result.profile].traits}</strong></p>
+                  </div>
+                  
+                  <div className="certificate-scores">
+                    <h3>{content[language].scoreLabel}</h3>
+                    <div className="score-grid">
+                      {Object.keys(result.scores).map((profile) => (
+                        <div key={profile} className={`score-item ${profile}`}>
+                          <span>{content[language][`${profile}Label`]}</span>
+                          <div className="score-bar-container">
+                            <div className="score-bar" 
+                                 style={{ 
+                                   width: `${result.scores[profile]}%`,
+                                   backgroundColor: profiles[language][profile].color 
+                                 }}
+                            />
+                            <span className="score-value">{result.scores[profile]}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="certificate-date">
+                    <p>{content[language].dateLabel} {new Date().toLocaleDateString()}</p>
+                  </div>
+                </div>
+                
+                <div className="certificate-footer">
+                  <p>{content[language].poweredBy}</p>
+                </div>
+              </div>
+              
+              {/* Certificate actions now outside of the certificate for better layout */}
+              <div className="certificate-actions">
+                <button onClick={handlePrintCertificate} className="primary-button">
+                  {content[language].printButton}
+                </button>
+                <button onClick={handleDownloadCertificate} className="primary-button" style={{ margin: '0 1rem' }}>
+                  {content[language].downloadButton}
+                </button>
+                <button onClick={() => setShowCertificate(false)} className="secondary-button">
+                  {content[language].closeCertificate}
+                </button>
+              </div>
             </div>
           </div>
         )}
