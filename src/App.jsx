@@ -25,22 +25,17 @@ function App() {
   const [animatingBackground, setAnimatingBackground] = useState(false);
   
   // Arduino bridge reference
-  const arduinoBridgeRef = useRef(null);
-  
-  // Initialize Arduino bridge
-  useEffect(() => {
-    // Set page title when component mounts
-    document.title = "Electio | Moral Compass Quiz";
-    
-    arduinoBridgeRef.current = new ArduinoBridge();
-    
-    // Clean up on unmount
-    return () => {
-      if (arduinoBridgeRef.current && arduinoConnected) {
-        arduinoBridgeRef.current.disconnect();
-      }
-    };
-  }, [arduinoConnected]);
+const arduinoBridgeRef = useRef(new ArduinoBridge()); // <-- create ONCE
+
+useEffect(() => {
+  document.title = "Electio | Moral Compass Quiz";
+  // No need to re-create the bridge here!
+  return () => {
+    if (arduinoBridgeRef.current && arduinoConnected) {
+      arduinoBridgeRef.current.disconnect();
+    }
+  };
+}, [arduinoConnected]);
   
   // Content for the app
   const content = {
@@ -619,32 +614,27 @@ function App() {
     console.log('Sending color to Arduino:', color);
     
     // If Arduino is connected, send the color
-    if (arduinoBridgeRef.current && arduinoConnected) {
-      arduinoBridgeRef.current.sendColor(color);
-    }
+  if (
+    arduinoBridgeRef.current &&
+    arduinoConnected &&
+    arduinoBridgeRef.current.writer
+  ) {
+    arduinoBridgeRef.current.sendColor(color);
+  } else {
+    console.warn('Arduino not connected or writer not available');
+  }
   };
   
   // Function to connect to Arduino
-  const connectToArduino = async () => {
-    if (arduinoBridgeRef.current) {
-      if (arduinoBridgeRef.current.isSupported()) {
-        const connected = await arduinoBridgeRef.current.connect();
-        setArduinoConnected(connected);
-        
-        // If connected and we have a background color, send it
-        if (connected && backgroundColor) {
-          sendColorToArduino(backgroundColor);
-        }
-        
-        return connected;
-      } else {
-        console.log('Web Serial API not supported in this browser');
-        return false;
-      }
+const connectToArduino = async () => {
+  if (arduinoBridgeRef.current) {
+    const connected = await arduinoBridgeRef.current.connect();
+    setArduinoConnected(connected);
+    if (connected) {
+      console.log('Writer:', arduinoBridgeRef.current.writer);
     }
-    return false;
-  };
-
+  }
+};
   const createShareableURL = () => {
     if (!result) return '';
     

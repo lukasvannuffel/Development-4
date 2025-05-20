@@ -126,13 +126,13 @@ class ArduinoBridge {
   // Convert hex color to RGB and send to Arduino
   async sendColor(hexColor) {
     // Remove the hash if present
-    hexColor = hexColor.replace('', '');
-    
+    hexColor = hexColor.replace(/^#/, '');
+
     // Convert hex to RGB
     const r = parseInt(hexColor.substring(0, 2), 16);
     const g = parseInt(hexColor.substring(2, 4), 16);
     const b = parseInt(hexColor.substring(4, 6), 16);
-    
+
     // Send RGB values as comma-separated string
     return this.sendData(`${r},${g},${b}`);
   }
