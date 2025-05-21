@@ -28,7 +28,7 @@ function App() {
 const arduinoBridgeRef = useRef(new ArduinoBridge()); // <-- create ONCE
 
 useEffect(() => {
-  document.title = "Electio | Moral Compass Quiz";
+  document.title = "Electio | Ontdek je morele kompas";
   // No need to re-create the bridge here!
   return () => {
     if (arduinoBridgeRef.current && arduinoConnected) {
