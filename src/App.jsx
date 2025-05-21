@@ -328,25 +328,25 @@ useEffect(() => {
         title: "De Idealist – Jij bent de morele kompasdrager",
         description: "Jouw keuzes tonen dat je altijd handelt vanuit principes. Je zet eerlijkheid en rechtvaardigheid op de eerste plaats, zelfs als dat betekent dat je moeilijke beslissingen moet nemen. Of het nu gaat om eerlijk studeren, mensen helpen of je idealen volgen, je kiest altijd voor het grotere goed. Maar pas op: soms kan je idealisme je in conflict brengen met de realiteit.",
         traits: "Eerlijk, rechtvaardig, betrokken, ambitieus",
-        color: "#66BB6A" // Brighter green
+        color: "#32AE00" // Brighter green
       },
       loyalist: {
         title: "De Loyalist – Jij bent de beschermer van je groep",
         description: "Jij kiest altijd voor je vrienden en de mensen om je heen. Of het nu gaat om je kotgenoot, een vriend in nood of een moeilijke groepsopdracht – je prioriteit ligt bij loyaliteit en samenhorigheid. Je denkt na over wat het beste is voor de groep, zelfs als dat betekent dat je eigen belangen soms opzij worden geschoven.",
         traits: "Sociaal, zorgzaam, teamplayer, conflictvermijdend",
-        color: "#42A5F5" // Brighter blue
+        color: "#0038FF" // Brighter blue
       },
       pragmatist: {
         title: "De Pragmaticus – Jij kiest wat werkt",
         description: "Voor jou draait alles om efficiëntie en slimme keuzes. Je denkt praktisch na en kiest altijd de optie die jou het meeste voordeel oplevert – of dat nu in je studie, sociale leven of carrière is. Dit maakt je doortastend en succesvol, maar soms kunnen anderen je keuzes als hard of berekend ervaren.",
         traits: "Doelgericht, realistisch, rationeel, strategisch",
-        color: "#FFA726" // Brighter orange
+        color: "#FDA600" // Brighter orange
       },
       individualist: {
         title: "De Individualist – Jij volgt je eigen pad",
         description: "Jij laat je niet beïnvloeden door verwachtingen van anderen – je maakt keuzes op basis van wat jij het belangrijkst vindt. Je hebt een sterke persoonlijkheid en volgt je eigen visie, zelfs als dat betekent dat je soms tegen de stroom in gaat. Je bent onafhankelijk en authentiek, maar let op dat je geen belangrijke connecties verliest door altijd je eigen weg te kiezen.",
         traits: "Onafhankelijk, zelfverzekerd, ambitieus, rebels",
-        color: "#AB47BC" // Brighter purple
+        color: "#8800FD" // Brighter purple
       }
     }, 
     en: {
