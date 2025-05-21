@@ -7,6 +7,13 @@ import html2canvas from 'html2canvas'; // New import for downloading certificate
 import './App.css';
 import ArduinoBridge from './arduinoBridge';
 
+import idealistSound from './sounds/idealist.mp3';  
+import loyalistSound from './sounds/loyalist.mp3';
+import pragmatistSound from './sounds/pragmatist.mp3';
+import individualistSound from './sounds/individualist.mp3';
+
+
+
 function App() {
   // State variables
   const [currentStep, setCurrentStep] = useState('intro');
@@ -36,6 +43,13 @@ useEffect(() => {
     }
   };
 }, [arduinoConnected]);
+
+const sounds = {
+  idealist: new Audio(idealistSound),
+  loyalist: new Audio(loyalistSound),
+  pragmatist: new Audio(pragmatistSound),
+  individualist: new Audio(individualistSound)
+};
   
   // Content for the app
   const content = {
@@ -664,6 +678,21 @@ const connectToArduino = async () => {
     
     // Determine the profile type for this answer
     const profileType = getAnswerProfileType(currentDilemmaIndex, answerIndex);
+
+      // Play the corresponding sound if a profile type is determined
+  if (profileType && sounds[profileType]) {
+    // Stop any currently playing sounds first
+    Object.values(sounds).forEach(sound => {
+      sound.pause();
+      sound.currentTime = 0;
+    });
+    
+    // Play the sound for this profile type
+    sounds[profileType].play().catch(error => {
+      // Handle any errors playing the sound (often occurs on mobile devices requiring user interaction)
+      console.warn('Error playing sound:', error);
+    });
+  }
     
     // Set background color based on profile and activate animation
     if (profileType) {
@@ -737,6 +766,20 @@ const connectToArduino = async () => {
           const profileColor = profiles[language][profileType].color;
           setBackgroundColor(profileColor);
           
+                  // Play the corresponding sound for the previous answer
+        if (sounds[profileType]) {
+          // Stop any currently playing sounds
+          Object.values(sounds).forEach(sound => {
+            sound.pause();
+            sound.currentTime = 0;
+          });
+          
+          // Play the sound
+          sounds[profileType].play().catch(error => {
+            console.warn('Error playing sound:', error);
+          });
+        }
+
           // Clear any existing timeouts to prevent conflicts
           if (window.fadeTimeout) clearTimeout(window.fadeTimeout);
           if (window.fadeOutTimeout) clearTimeout(window.fadeOutTimeout);
@@ -768,18 +811,25 @@ const connectToArduino = async () => {
   };
 
   // Handle restart
-  const handleRestart = () => {
-    setAnswers({});
-    setResult(null);
-    setCurrentStep('intro');
-    setProgress(0);
-    setShowQR(false);
-    setShowCertificate(false);
-    setBackgroundColor(null);
-    setBackgroundActive(false);
-    setAnimatingBackground(false);
-    sendColorToArduino('#121212'); // Reset to default color
-  };
+const handleRestart = () => {
+  // Stop any playing sounds
+  Object.values(sounds).forEach(sound => {
+    sound.pause();
+    sound.currentTime = 0;
+  });
+  
+  // Rest of your existing code...
+  setAnswers({});
+  setResult(null);
+  setCurrentStep('intro');
+  setProgress(0);
+  setShowQR(false);
+  setShowCertificate(false);
+  setBackgroundColor(null);
+  setBackgroundActive(false);
+  setAnimatingBackground(false);
+  sendColorToArduino('#121212'); // Reset to default color
+};
 
   // Handle language toggle
   const toggleLanguage = () => {
